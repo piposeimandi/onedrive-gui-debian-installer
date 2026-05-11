@@ -1,5 +1,7 @@
 # OneDrive en Debian 13 (Trixie)
 
+> [🇬🇧 Read in English](README.md)
+
 Instalacion automatizada de **OneDrive Client** (CLI) y **OneDriveGUI** (interfaz grafica) desde codigo fuente.
 
 ## Contenido
