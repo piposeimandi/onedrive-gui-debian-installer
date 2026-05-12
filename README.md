@@ -11,7 +11,6 @@ Automated installation of **OneDrive Client** (CLI) and **OneDriveGUI** (graphic
 | `install_all.sh` | Runs both installation scripts in order |
 | `install_onedrive.sh` | Builds and installs [abraunegg/onedrive](https://github.com/abraunegg/onedrive) |
 | `install_onedrivegui.sh` | Installs [bpozdena/OneDriveGUI](https://github.com/bpozdena/OneDriveGUI) from source |
-| `OneDriveGUI-*.AppImage` | Portable OneDriveGUI version (alternative) |
 
 ## Requirements
 
