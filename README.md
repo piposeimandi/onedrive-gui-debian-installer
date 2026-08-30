@@ -1,39 +1,56 @@
-# OneDrive on Debian 13 (Trixie)
+# OneDrive + OneDriveGUI installer
 
 > [🇪🇸 Leer en español](README.es.md)
 
-Automated installation of **OneDrive Client** (CLI) and **OneDriveGUI** (graphical interface) from source code.
+Automated installation of **OneDrive Client** (CLI) and **OneDriveGUI** (graphical interface) for Linux.
+
+## Supported distributions
+
+| Distribution | Scripts folder | Notes |
+|---|---|---|
+| Debian 13 (Trixie) and derivatives | `debian/` | Builds OneDrive CLI from source (apt) |
+| Fedora 44 | `fedora/` | Installs the native `onedrive` package (dnf) |
 
 ## Contents
 
-| File | Description |
-|---|---|
-| `install_all.sh` | Runs both installation scripts in order |
-| `install_onedrive.sh` | Builds and installs [abraunegg/onedrive](https://github.com/abraunegg/onedrive) |
-| `install_onedrivegui.sh` | Installs [bpozdena/OneDriveGUI](https://github.com/bpozdena/OneDriveGUI) from source |
-| `OneDriveGUI-*.AppImage` | Portable OneDriveGUI version (alternative) |
+```
+/
+├── install_all.sh          # Entry point: auto-detects the distro and delegates
+├── debian/
+│   ├── install_all.sh      # Runs both scripts sequentially (Debian)
+│   ├── install_onedrive.sh     # Build & install abraunegg/onedrive from source (apt)
+│   └── install_onedrivegui.sh  # Install bpozdena/OneDriveGUI from source (apt + pip)
+└── fedora/
+    ├── install_all.sh      # Runs both scripts sequentially (Fedora)
+    ├── install_onedrive.sh     # Install onedrive from Fedora repos (dnf)
+    └── install_onedrivegui.sh  # Install bpozdena/OneDriveGUI from source (dnf PySide6 + pip)
+```
+
+The `OneDriveGUI-*.AppImage` is a portable alternative that can be used on either distribution.
 
 ## Requirements
 
-- Debian 13 (Trixie) — also works on Debian 12 (Bookworm) and derivatives
+- Debian 13 (Trixie)/derivatives or Fedora 44
 - `sudo` configured
 - Internet connection
 
 ## Quick install
 
+From the repository root (auto-detects your distribution):
+
 ```bash
-chmod +x install_all.sh install_onedrive.sh install_onedrivegui.sh
+chmod +x install_all.sh
 ./install_all.sh
 ```
 
-Or step by step:
+Or manually per distribution:
 
 ```bash
-# 1. CLI client
-./install_onedrive.sh
+# Debian / Ubuntu / derivatives
+./debian/install_all.sh
 
-# 2. Graphical interface
-./install_onedrivegui.sh
+# Fedora
+./fedora/install_all.sh
 ```
 
 ## Usage
@@ -53,19 +70,30 @@ onedrive-gui
 
 ### `install_onedrive.sh`
 
-1. Installs build dependencies: `ldc`, `dub`, `libcurl`, `libsqlite3`, etc.
-2. Clones the official OneDrive repo (abraunegg/onedrive) to `~/onedrive-src`
-3. Compiles with `make` and installs with `sudo make install`
-4. Verifies `onedrive --version` works
+The behavior differs by distribution:
+
+- **Debian** (`debian/install_onedrive.sh`): builds from source. Installs build
+  dependencies (`ldc`, `dub`, `libcurl`, `libsqlite3`, etc.), clones the official
+  OneDrive repo (abraunegg/onedrive) to `~/onedrive-src`, compiles with `make`
+  and installs with `sudo make install`. Verifies `onedrive --version`.
+- **Fedora** (`fedora/install_onedrive.sh`): installs the **native `onedrive` package**
+  from the official Fedora repositories with `sudo dnf install -y onedrive`.
+  Fedora's packages are relatively up to date; if you want the latest git build you'd
+  have to compile from source, but the native way is preferred. Verifies `onedrive --version`.
 
 ### `install_onedrivegui.sh`
 
-1. Installs system dependencies: `python3-pyside6.qtcore`, `python3-pyside6.qtgui`,
-   `python3-pyside6.qtwidgets`, `python3-pyside6.qtwebenginewidgets`, `python3-requests`
-2. Clones OneDriveGUI (bpozdena/OneDriveGUI) to `~/OneDriveGUI`
-3. Installs pip dependencies (`urllib3<2.0`)
-4. Creates wrapper at `/usr/local/bin/onedrive-gui`
-5. Creates `.desktop` entry for the application menu
+The system dependency step differs by distribution:
+
+- **Debian** (`debian/install_onedrivegui.sh`): PySide6 is split into individual
+  packages (`python3-pyside6.qtcore`, `python3-pyside6.qtgui`, `python3-pyside6.qtwidgets`,
+  `python3-pyside6.qtwebenginewidgets`, `python3-pyside6.qtsvg`) plus `python3-requests`.
+- **Fedora** (`fedora/install_onedrivegui.sh`): PySide6 is a **single package**
+  (`python3-pyside6`) plus `python3-requests` and `python3-pip`.
+
+Then, in both cases: clones OneDriveGUI (bpozdena/OneDriveGUI) to `~/OneDriveGUI`,
+installs pip dependencies, creates the wrapper at `/usr/local/bin/onedrive-gui`, and
+creates the `.desktop` entry for the application menu.
 
 ## Technical notes
 
@@ -74,6 +102,10 @@ onedrive-gui
   is necessary.
 - **PySide6 on Debian 13** is split into individual packages (`python3-pyside6.qt*`)
   at version 6.8.2. There is no `python3-pyside6` metapackage.
+- **PySide6 on Fedora 44** is a single `python3-pyside6` package (6.11.1-4.fc44),
+  which includes QtWebEngine as a dependency.
+- **Fedora ships `onedrive` natively** in its official repositories, so it is installed
+  via `dnf` instead of being compiled from source.
 - **The AppImage is optional** if you install from source, but serves as an alternative
   if you prefer not to clone the repository.
 
@@ -82,8 +114,13 @@ onedrive-gui
 Scripts are idempotent: re-running them does `git pull` and rebuilds/reinstalls.
 
 ```bash
-./install_onedrive.sh      # update CLI
-./install_onedrivegui.sh   # update GUI
+# Debian
+./debian/install_onedrive.sh      # update CLI (rebuild)
+./debian/install_onedrivegui.sh   # update GUI
+
+# Fedora
+./fedora/install_onedrive.sh      # update CLI (dnf upgrade)
+./fedora/install_onedrivegui.sh   # update GUI
 ```
 
 ## License
