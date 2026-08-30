@@ -21,8 +21,26 @@ else
     cd "$REPO_DIR"
 fi
 
-echo "==> Instalando dependencias pip..."
-python3 -m pip install -r requirements.txt 2>/dev/null || true
+# En Fedora, PySide6 y requests vienen como paquetes del sistema. NO correr
+# `pip install -r requirements.txt` porque el requirements incluye PySide6 y
+# pip instalaria una build en ~/.local que PISA al del sistema y rompe shiboken
+# (PEP 668 / externally-managed-environment). Solo aseguramos urllib3<2.0,
+# que es la unica dependencia pip que OneDriveGUI exige y puede no venir del sistema.
+echo "==> Instalando dependencias pip (solo urllib3<2.0)..."
+# No instalar PySide6 desde pip. Si urllib3 del sistema es 2.x (como en Fedora),
+# OneDriveGUI pide <2.0 -> lo instalamos con --user como fallback.
+python3 - <<'EOF'
+import urllib3
+major = int(urllib3.__version__.split('.')[0])
+exit(0 if major < 2 else 1)
+EOF
+if [ $? -ne 0 ]; then
+    echo "==> urllib3 >= 2.0 detectado, instalando urllib3<2.0 en ~/.local (requiere flag --break-system-packages por PEP 668)..."
+    python3 -m pip install --user --break-system-packages 'urllib3<2.0' 2>/dev/null || \
+        python3 -m pip install --user 'urllib3<2.0' 2>/dev/null || echo "Omitido: urllib3<2.0 no se pudo instalar (el sistema ya lo provee o falta permiso de red)"
+else
+    echo "==> urllib3 < 2.0 ya disponible, no hace falta pip"
+fi
 
 echo "==> Creando wrapper en /usr/local/bin/onedrive-gui..."
 sudo tee /usr/local/bin/onedrive-gui > /dev/null <<'WRAPPER'
