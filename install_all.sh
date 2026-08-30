@@ -3,27 +3,28 @@ set -e
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Detectar distro
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+fi
+
+case "$ID" in
+    debian|ubuntu|linuxmint|pop|elementary|zorin|neon)
+        DISTRO="debian"
+        ;;
+    fedora)
+        DISTRO="fedora"
+        ;;
+    *)
+        echo "Error: distro no soportada (ID=\"$ID\")." >&2
+        echo "Soportadas: Debian/Ubuntu/derivados, Fedora." >&2
+        exit 1
+        ;;
+esac
+
 echo "========================================"
-echo " OneDrive + OneDriveGUI para Debian 13"
+echo " OneDrive + OneDriveGUI para $PRETTY_NAME"
 echo "========================================"
 echo ""
 
-echo "[1/2] Instalando OneDrive CLI..."
-echo "----------------------------------------"
-bash "$DIR/install_onedrive.sh"
-
-echo ""
-echo "[2/2] Instalando OneDriveGUI..."
-echo "----------------------------------------"
-bash "$DIR/install_onedrivegui.sh"
-
-echo ""
-echo "========================================"
-echo " Instalacion completada"
-echo "========================================"
-echo ""
-echo " Pasos siguientes:"
-echo "   1. onedrive --synchronize   (autenticar)"
-echo "   2. systemctl --user enable --now onedrive"
-echo "   3. onedrive-gui             (interfaz grafica)"
-echo ""
+exec bash "$DIR/$DISTRO/install_all.sh"
